@@ -1,0 +1,9 @@
+#!/bin/bash
+git filter-branch -f --prune-empty --tree-filter '
+SUBDIR='$1'
+bash -c "
+if [[ ! -e $SUBDIR ]]; then
+    mkdir -p $SUBDIR
+    git ls-tree --name-only $GIT_COMMIT | grep -v DCO | grep -v CONTRIBUTING.md | grep -v LICENSE | grep -v NOTICE | grep -v README.md | xargs -I files mv files $SUBDIR
+fi
+"'

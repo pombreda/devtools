@@ -1,0 +1,123 @@
+#!/usr/bin/python
+
+#  Copyright 2013 CoreOS, Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+import argparse
+from github import Github
+
+# Hooks that are not managed by this script
+IGNORE_HOOKS = ( 'travis', )
+
+def remove_wiki(repo):
+    print "removing wiki from %s" % (repo.name,)
+    repo.edit(repo.name, has_wiki=False)
+
+def add_defaults(repo, flowdock_token):
+    print "adding default hooks to %s" % (repo.name,)
+    add_irc_hook(repo)
+    add_email_hook(repo)
+    add_flowdock_hook(repo, flowdock_token)
+    remove_wiki(repo)
+
+def add_email_hook(repo):
+    events = [
+      "commit_comment",
+      "issue_comment",
+      "issues",
+      "pull_request",
+      "pull_request_review_comment",
+      "push"
+    ]
+    config = {
+        'address': 'srclib-dev-notifications@googlegroups.com',
+    }
+
+    repo.create_hook('email', config, events, True)
+
+def add_irc_hook(repo):
+    events = [
+      "commit_comment",
+      "issue_comment",
+      "issues",
+      "pull_request",
+      "pull_request_review_comment",
+      "push"
+    ]
+    config = {
+        'server': 'irc.freenode.net',
+        'port': '6667',
+        'room': '#srclib',
+        'nick': 'srclib-gh',
+        'message_without_join': '1',
+        'notice': '1'
+    }
+
+    repo.create_hook('irc', config, events, True)
+
+
+def add_flowdock_hook(repo, flowdock_token):
+    events = [
+      "commit_comment",
+      "issue_comment",
+      "issues",
+      "pull_request",
+      "pull_request_review_comment",
+      "push"
+    ]
+    config = {
+        'token': flowdock_token
+    }
+
+    repo.create_hook('flowdock', config, events, True)
+
+def delete_all_hooks(repo):
+    hooks = repo.get_hooks()
+    for hook in hooks:
+        if hook.name in IGNORE_HOOKS:
+            print "ignoring existing hook %s on %s" % (hook.name, repo.name)
+        else:
+            print "deleting hook %s on %s" % (hook.name, repo.name)
+            hook.delete()
+
+# create the top-level parser
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--token', help='GitHub token', required=True)
+parser.add_argument('-f', '--flowdock-token', help='Flowdock token', required=True)
+subparsers = parser.add_subparsers()
+
+def new_repo(args):
+    g = Github(args.token)
+    org = g.get_organization("sourcegraph")
+    repo = org.create_repo(args.name, homepage="https://sourcegraph.com/srclib/%s" % args.name)
+    add_defaults(repo, args.flowdock_token)
+
+parser_new_repo = subparsers.add_parser('new-repo', help="Create a new srclib repo")
+parser_new_repo.add_argument('name')
+parser_new_repo.set_defaults(func=new_repo)
+
+def reset_repo_hooks(args):
+    g = Github(args.token)
+    org = g.get_organization("sourcegraph")
+    repos = org.get_repos()
+    for repo in repos:
+        if repo.name.startswith('srclib'):
+            delete_all_hooks(repo)
+            add_defaults(repo, args.flowdock_token)
+
+parser_reset_repo_hooks = subparsers.add_parser('reset-repo-hooks', help="Set default hooks on all srclib repos")
+parser_reset_repo_hooks.set_defaults(func=reset_repo_hooks)
+
+args = parser.parse_args()
+args.func(args)

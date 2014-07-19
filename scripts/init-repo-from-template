@@ -1,0 +1,19 @@
+#!/bin/sh
+
+REPONAME=$1
+REPODIR=$HOME/src/github.com/sourcegraph/$REPONAME
+
+cd $REPODIR/.. && \
+git clone https://github.com/sourcegraph/srclib-template-project.git $REPONAME && \
+cd $REPONAME && \
+rm -rf .git &&
+git init && \
+sed -i "s/srclib-template-project/$REPONAME/g" README.md && \
+git add * && \
+git commit -am 'initial commit from template' && \
+git remote add origin git@github.com:sourcegraph/$REPONAME.git && \
+git push -u origin master && \
+echo && \
+echo 'Your new repository is ready in:' && \
+echo   $REPODIR
+

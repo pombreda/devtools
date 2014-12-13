@@ -1,7 +1,7 @@
 #!/bin/sh
 
 REPONAME=$1
-REPODIR=$HOME/src/github.com/sourcegraph/$REPONAME
+REPODIR=$HOME/src/sourcegraph.com/sourcegraph/$REPONAME
 
 cd $REPODIR/.. && \
 git clone https://github.com/sourcegraph/srclib-template-project.git $REPONAME && \

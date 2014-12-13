@@ -26,8 +26,9 @@ def remove_wiki(repo):
 
 def add_defaults(repo, flowdock_token):
     print "adding default hooks to %s" % (repo.name,)
-    add_irc_hook(repo)
-    add_email_hook(repo)
+    if repo.name.startswith('srclib'):
+        add_irc_hook(repo)
+        add_email_hook(repo)
     add_flowdock_hook(repo, flowdock_token)
     remove_wiki(repo)
 
@@ -100,10 +101,10 @@ subparsers = parser.add_subparsers()
 def new_repo(args):
     g = Github(args.token)
     org = g.get_organization("sourcegraph")
-    repo = org.create_repo(args.name, homepage="https://sourcegraph.com/srclib/%s" % args.name)
+    repo = org.create_repo(args.name, homepage="https://sourcegraph.com/sourcegraph/%s" % args.name)
     add_defaults(repo, args.flowdock_token)
 
-parser_new_repo = subparsers.add_parser('new-repo', help="Create a new srclib repo")
+parser_new_repo = subparsers.add_parser('new-repo', help="Create a new repo")
 parser_new_repo.add_argument('name')
 parser_new_repo.set_defaults(func=new_repo)
 
@@ -112,11 +113,10 @@ def reset_repo_hooks(args):
     org = g.get_organization("sourcegraph")
     repos = org.get_repos()
     for repo in repos:
-        if repo.name.startswith('srclib'):
-            delete_all_hooks(repo)
-            add_defaults(repo, args.flowdock_token)
+        delete_all_hooks(repo)
+        add_defaults(repo, args.flowdock_token)
 
-parser_reset_repo_hooks = subparsers.add_parser('reset-repo-hooks', help="Set default hooks on all srclib repos")
+parser_reset_repo_hooks = subparsers.add_parser('reset-repo-hooks', help="Set default hooks on all repos")
 parser_reset_repo_hooks.set_defaults(func=reset_repo_hooks)
 
 args = parser.parse_args()

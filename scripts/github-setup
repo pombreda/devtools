@@ -19,6 +19,7 @@ from github import Github
 
 # Hooks that are not managed by this script
 IGNORE_HOOKS = ( 'travis', )
+IGNORE_HOOK_URLS = ( 'https://sourcegraph.com', )
 
 def remove_wiki(repo):
     print "removing wiki from %s" % (repo.name,)
@@ -86,10 +87,16 @@ def add_flowdock_hook(repo, flowdock_token):
 def delete_all_hooks(repo):
     hooks = repo.get_hooks()
     for hook in hooks:
-        if hook.name in IGNORE_HOOKS:
+        skip = False
+        if hook.name.lower() in IGNORE_HOOKS:
+            skip = True
+        for urlpat in IGNORE_HOOK_URLS:
+            if urlpat in hook.config.get('url', ''):
+                skip = True
+        if skip:
             print "ignoring existing hook %s on %s" % (hook.name, repo.name)
         else:
-            print "deleting hook %s on %s" % (hook.name, repo.name)
+            print "deleting hook %s (%s) on %s" % (hook.name, hook.config.get('url'), repo.name)
             hook.delete()
 
 # create the top-level parser

@@ -12,6 +12,7 @@ sed -i "s/srclib-template-project/$REPONAME/g" README.md && \
 git add * && \
 git commit -am 'initial commit from template' && \
 git remote add origin git@github.com:sourcegraph/$REPONAME.git && \
+git remote add srclib https://sourcegraph.com/sourcegraph/$REPONAME.git && \
 git push -u origin master && \
 echo && \
 echo 'Your new repository is ready in:' && \
